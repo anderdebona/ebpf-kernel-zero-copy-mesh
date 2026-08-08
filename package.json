@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "type": "module",
   "bin": {
-    "ebpf-mesh": "./dist/server.js"
+    "ebpf-mesh": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
