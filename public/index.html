@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eBPF Kernel Zero-Copy Mesh Inspector | anderdebona</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070913;
+      --panel: rgba(15, 23, 42, 0.75);
+      --border: rgba(16, 185, 129, 0.2);
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.4);
+      --cyan: #06b6d4;
+      --red: #ef4444;
+      --text: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+    .brand { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
+    .btn { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 700; cursor: pointer; }
+    pre { background: rgba(2, 6, 23, 0.9); border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; font-family: 'Fira Code', monospace; font-size: 0.85rem; color: #a7f3d0; overflow-x: auto; max-height: 250px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="brand">🐧 eBPF Kernel Network & Zero-Copy Mesh</div>
+      <div style="font-size: 0.85rem; color: #94a3b8;">Linux XDP Driver Level Telemetry & Ring Buffer Mesh • anderdebona</div>
+    </div>
+    <span style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(110, 231, 183, 0.3); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 700;">Linux Kernel XDP Path</span>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>1. Inject Synthetic Network Traffic</h2>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+        Simulates TCP/UDP traffic passing through eBPF XDP socket filters.
+      </p>
+      <button class="btn" onclick="injectTraffic()">Inject 100 Packets</button>
+      <pre id="kernelLog" style="margin-top: 1rem;">Click button to trigger eBPF XDP packet inspection...</pre>
+    </div>
+
+    <div class="panel">
+      <h2>2. eBPF Zero-Copy Ring Buffer Telemetry</h2>
+      <pre id="ringLog">Awaiting Ring Buffer consumption...</pre>
+    </div>
+  </div>
+
+  <script>
+    async function injectTraffic() {
+      const res = await fetch('/api/ebpf/inject', { method: 'POST' });
+      const data = await res.json();
+      document.getElementById('kernelLog').innerText = JSON.stringify(data.kernelMetrics, null, 2);
+      document.getElementById('ringLog').innerText = JSON.stringify(data.consumedRingBuffer.slice(0, 4), null, 2);
+    }
+
+    window.onload = injectTraffic;
+  </script>
+</body>
+</html>

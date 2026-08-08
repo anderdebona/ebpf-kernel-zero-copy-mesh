@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  ebpf-kernel-mesh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - NODE_ENV=production
+    restart: unless-stopped

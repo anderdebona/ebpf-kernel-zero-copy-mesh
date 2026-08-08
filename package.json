@@ -1,0 +1,37 @@
+{
+  "name": "ebpf-kernel-zero-copy-mesh",
+  "version": "1.0.0",
+  "description": "PhD-Grade eBPF Kernel Network & Zero-Copy Telemetry Engine for Linux XDP Data Paths",
+  "main": "dist/server.js",
+  "type": "module",
+  "bin": {
+    "ebpf-mesh": "./dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "ebpf",
+    "linux-kernel",
+    "xdp",
+    "zero-copy",
+    "ring-buffer",
+    "high-performance-networking",
+    "telemetry"
+  ],
+  "author": "anderdebona",
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.3.3",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "vitest": "^1.2.0"
+  }
+}
