@@ -3,6 +3,8 @@ import { EBPFKernelTracer, EBPFPacketHeader } from '../src/ebpf/kernel-tracer.js
 import { EBPFZeroCopyRingBuffer } from '../src/ebpf/zero-copy.js';
 import { FlowAggregator } from '../src/ebpf/flow-aggregator.js';
 import { AnomalyDetector } from '../src/ebpf/anomaly-detector.js';
+import { TokenBucketRateLimiter } from '../src/ebpf/rate-limiter.js';
+import { ConnectionTracker } from '../src/ebpf/connection-tracker.js';
 
 function makePacket(overrides: Partial<EBPFPacketHeader> = {}): EBPFPacketHeader {
   return {
@@ -158,5 +160,66 @@ describe('Anomaly Detector', () => {
     detector.reset();
     const results = detector.analyzeWindow([makePacket()]);
     expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('Token Bucket Rate Limiter', () => {
+  it('should allow packets within rate limit', () => {
+    const limiter = new TokenBucketRateLimiter(10, 5);
+    const result = limiter.consume(makePacket({ timestampNs: BigInt(1_000_000_000) }));
+    expect(result.allowed).toBe(true);
+    expect(result.remainingTokens).toBe(9);
+  });
+
+  it('should deny packets when bucket is exhausted', () => {
+    const limiter = new TokenBucketRateLimiter(3, 1);
+    const ts = BigInt(1_000_000_000);
+    limiter.consume(makePacket({ srcIp: '10.0.0.1', timestampNs: ts }));
+    limiter.consume(makePacket({ srcIp: '10.0.0.1', timestampNs: ts }));
+    limiter.consume(makePacket({ srcIp: '10.0.0.1', timestampNs: ts }));
+    const result = limiter.consume(makePacket({ srcIp: '10.0.0.1', timestampNs: ts }));
+    expect(result.allowed).toBe(false);
+    expect(result.retryAfterMs).toBeGreaterThan(0);
+  });
+
+  it('should track separate buckets per source IP', () => {
+    const limiter = new TokenBucketRateLimiter(5, 1);
+    const ts = BigInt(1_000_000_000);
+    limiter.consume(makePacket({ srcIp: '10.0.0.1', timestampNs: ts }));
+    limiter.consume(makePacket({ srcIp: '10.0.0.2', timestampNs: ts }));
+    const states = limiter.getBucketStates();
+    expect(states.length).toBe(2);
+  });
+});
+
+describe('Connection Tracker', () => {
+  it('should create NEW connections on first packet', () => {
+    const ct = new ConnectionTracker();
+    const entry = ct.track(makePacket());
+    expect(entry.state).toBe('NEW');
+    expect(entry.packetCount).toBe(1);
+  });
+
+  it('should transition to ESTABLISHED after multiple packets', () => {
+    const ct = new ConnectionTracker();
+    ct.track(makePacket());
+    const entry = ct.track(makePacket());
+    expect(entry.state).toBe('ESTABLISHED');
+  });
+
+  it('should report connection statistics', () => {
+    const ct = new ConnectionTracker();
+    ct.track(makePacket({ srcIp: '1.1.1.1', dstIp: '2.2.2.2' }));
+    ct.track(makePacket({ srcIp: '3.3.3.3', dstIp: '4.4.4.4' }));
+    const stats = ct.getStats();
+    expect(stats.total).toBe(2);
+    expect(stats.newConn).toBe(2);
+  });
+
+  it('should detect established connections for stateful firewall', () => {
+    const ct = new ConnectionTracker();
+    ct.track(makePacket());
+    ct.track(makePacket());
+    expect(ct.isEstablished(makePacket())).toBe(true);
   });
 });
