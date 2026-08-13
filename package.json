@@ -1,6 +1,6 @@
 {
   "name": "ebpf-kernel-zero-copy-mesh",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "PhD-Grade eBPF Kernel Network & Zero-Copy Telemetry Engine for Linux XDP Data Paths",
   "main": "dist/server.js",
   "type": "module",

@@ -223,3 +223,66 @@ describe('Connection Tracker', () => {
     expect(ct.isEstablished(makePacket())).toBe(true);
   });
 });
+
+describe('DynamicBPFFilterEngine (v4.0.0)', () => {
+  it('should compile and match user defined rules', async () => {
+    const { DynamicBPFFilterEngine } = await import('../src/ebpf/dynamic-filter.js');
+    const engine = new DynamicBPFFilterEngine();
+
+    engine.registerProgram({
+      id: 'drop_scanner',
+      name: 'Block Port Scanner',
+      action: 'DROP',
+      rules: [
+        { field: 'dstPort', op: 'EQ', value: 23 },
+        { field: 'protocol', op: 'EQ', value: 'TCP' },
+      ],
+      matchAll: true,
+    });
+
+    const resMatch = engine.evaluate(makePacket({ dstPort: 23, protocol: 'TCP' }));
+    expect(resMatch.matched).toBe(true);
+    expect(resMatch.action).toBe('DROP');
+
+    const resPass = engine.evaluate(makePacket({ dstPort: 443, protocol: 'TCP' }));
+    expect(resPass.matched).toBe(false);
+    expect(resPass.action).toBe('DEFAULT_PASS');
+  });
+
+  it('should support prefix and list matching', async () => {
+    const { DynamicBPFFilterEngine } = await import('../src/ebpf/dynamic-filter.js');
+    const engine = new DynamicBPFFilterEngine();
+
+    engine.registerProgram({
+      id: 'subnet_allow',
+      name: 'Subnet Allow Rule',
+      action: 'PASS',
+      rules: [{ field: 'srcIp', op: 'PREFIX', value: '10.50.' }],
+    });
+
+    const res = engine.evaluate(makePacket({ srcIp: '10.50.1.20' }));
+    expect(res.matched).toBe(true);
+    expect(res.action).toBe('PASS');
+  });
+});
+
+describe('PrometheusMetricsExporter (v4.0.0)', () => {
+  it('should format metrics into valid Prometheus exposition format', async () => {
+    const { PrometheusMetricsExporter } = await import('../src/ebpf/prometheus-exporter.js');
+    const exporter = new PrometheusMetricsExporter('ebpf_test');
+    const output = exporter.exportMetrics({
+      totalPackets: 150000,
+      droppedPackets: 450,
+      passedPackets: 149550,
+      byteCount: 104857600,
+      ringBufferOccupancyRatio: 0.25,
+      activeConnections: 1200,
+      avgLatencyUs: 0.185,
+    }, { env: 'production' });
+
+    expect(output).toContain('# TYPE ebpf_test_packets_total counter');
+    expect(output).toContain('ebpf_test_packets_total{env="production"} 150000');
+    expect(output).toContain('ebpf_test_processing_latency_microseconds{env="production"} 0.185');
+  });
+});
+
