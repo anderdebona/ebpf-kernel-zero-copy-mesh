@@ -5,7 +5,7 @@ authors:
     given-names: "Anderson"
     alias: "anderdebona"
 title: "eBPF Kernel Zero-Copy Mesh: High-Throughput Linux XDP Telemetry & Dynamic Packet Filtering"
-version: 4.0.0
-date-released: 2026-08-13
+version: 5.0.0
+date-released: 2026-08-18
 url: "https://github.com/anderdebona/ebpf-kernel-zero-copy-mesh"
 license: MIT

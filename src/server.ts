@@ -8,6 +8,8 @@ import { PrometheusMetricsExporter } from './ebpf/prometheus-exporter.js';
 import { FlowAggregator } from './ebpf/flow-aggregator.js';
 import { TokenBucketRateLimiter } from './ebpf/rate-limiter.js';
 import { ConnectionTracker } from './ebpf/connection-tracker.js';
+import { XdpL4FlowSteerer } from './ebpf/xdp-l4-flow-steerer.js';
+import { SynFloodGuard } from './ebpf/syn-flood-guard.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +27,8 @@ const prometheusExporter = new PrometheusMetricsExporter('ebpf_kernel_mesh');
 const flowAggregator = new FlowAggregator();
 const rateLimiter = new TokenBucketRateLimiter(100, 20);
 const connTracker = new ConnectionTracker();
+const flowSteerer = new XdpL4FlowSteerer(8);
+const synGuard = new SynFloodGuard(50);
 
 // Register default defensive filters
 filterEngine.registerProgram({
@@ -43,11 +47,15 @@ app.post('/api/ebpf/inject', (req, res) => {
 
   for (let i = 0; i < count; i++) {
     const isSynFlood = attackMode === 'SYN_FLOOD' ? true : Math.random() < 0.25;
+    const srcIp = `192.168.1.${Math.floor(Math.random() * 254) + 1}`;
+    const dstPort = isSynFlood ? 80 : (Math.random() < 0.1 ? 23 : 443);
+    const srcPort = 1024 + Math.floor(Math.random() * 50000);
+
     const packet: EBPFPacketHeader = {
-      srcIp: `192.168.1.${Math.floor(Math.random() * 254) + 1}`,
+      srcIp,
       dstIp: '10.0.0.1',
-      srcPort: 1024 + Math.floor(Math.random() * 50000),
-      dstPort: isSynFlood ? 80 : (Math.random() < 0.1 ? 23 : 443),
+      srcPort,
+      dstPort,
       protocol: 'TCP',
       payloadLength: isSynFlood ? 0 : 512 + Math.floor(Math.random() * 1024),
       timestampNs: BigInt(Date.now() * 1000000),
@@ -62,7 +70,31 @@ app.post('/api/ebpf/inject', (req, res) => {
       action = tracer.inspectPacket(packet);
     }
 
-    // 3. Stateful tracking & ring buffer
+    // 3. v5.0.0 XDP Flow Steering to CPU Queues
+    const steerResult = flowSteerer.processPacket({
+      id: `p-${i}`,
+      srcIp,
+      dstIp: packet.dstIp,
+      srcPort,
+      dstPort,
+      protocol: 'TCP',
+      length: packet.payloadLength
+    });
+
+    // 4. v5.0.0 SYN-Flood Cookie Mitigation
+    let synCookie: number | undefined;
+    if (isSynFlood) {
+      synCookie = synGuard.generateSynCookie({
+        srcIp,
+        dstIp: packet.dstIp,
+        srcPort,
+        dstPort,
+        initialSeq: 100000 + i,
+        timestamp: Date.now()
+      });
+    }
+
+    // 5. Stateful tracking & ring buffer
     if (action === 'XDP_PASS') {
       rateLimiter.consume(packet);
       connTracker.track(packet);
@@ -74,7 +106,10 @@ app.post('/api/ebpf/inject', (req, res) => {
       srcIp: packet.srcIp,
       dstPort: packet.dstPort,
       payloadLength: packet.payloadLength,
-      action,
+      action: steerResult.action,
+      targetQueue: steerResult.targetQueue,
+      assignedCore: steerResult.assignedCore,
+      synCookie,
       filterMatched: dynamicFilterResult.matched,
     });
   }
@@ -84,6 +119,8 @@ app.post('/api/ebpf/inject', (req, res) => {
     kernelMetrics,
     filterStats: filterEngine.getStats(),
     connectionStats: connTracker.getStats(),
+    queueTelemetry: flowSteerer.getTelemetry(),
+    synGuardStatus: synGuard.getStatus(),
     sampleInjected: injectedPackets.slice(0, 10),
     consumedRingBuffer: ringBuffer.consumeRingBuffer(),
   });
@@ -120,5 +157,5 @@ app.get('/metrics', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 eBPF Kernel Zero-Copy Mesh Turbocharged on http://localhost:${PORT}`);
+  console.log(`🚀 eBPF Kernel Zero-Copy Mesh v5.0.0 on http://localhost:${PORT}`);
 });

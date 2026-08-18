@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>eBPF Kernel Zero-Copy Mesh Turbocharged | anderdebona</title>
+  <title>eBPF Kernel Zero-Copy Mesh Studio v5.0.0 | anderdebona</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #030712;
-      --panel: rgba(15, 23, 42, 0.8);
+      --panel: rgba(15, 23, 42, 0.85);
       --border: rgba(16, 185, 129, 0.25);
       --accent: #10b981;
       --cyan: #06b6d4;
+      --amber: #f59e0b;
       --red: #f43f5e;
       --text: #f9fafb;
       --text-dim: #94a3b8;
@@ -22,194 +23,146 @@
     .brand { font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, #10b981, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .status-badge { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
     
-    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; text-align: center; }
-    .stat-val { font-size: 1.8rem; font-weight: 700; font-family: 'Fira Code', monospace; color: var(--cyan); margin-top: 0.25rem; }
-    .stat-lbl { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.85rem; text-align: center; }
+    .stat-val { font-size: 1.5rem; font-weight: 700; font-family: 'Fira Code', monospace; color: var(--cyan); margin-top: 0.2rem; }
+    .stat-lbl { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
 
     .main-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; backdrop-filter: blur(12px); }
-    .panel-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; color: #a7f3d0; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; backdrop-filter: blur(12px); margin-bottom: 1.5rem; }
+    .panel-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; color: #a7f3d0; }
     
     canvas { width: 100%; height: 180px; background: rgba(2, 6, 23, 0.95); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 0.5rem; display: block; margin-bottom: 1rem; }
     
-    .btn { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: 0.2s all; }
+    .btn { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 0.55rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: 0.2s all; font-size: 0.85rem; }
     .btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
     .btn-red { background: linear-gradient(135deg, #f43f5e, #e11d48); }
     
     .controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    pre { background: rgba(2, 6, 23, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.75rem; border-radius: 0.5rem; font-family: 'Fira Code', monospace; font-size: 0.8rem; color: #6ee7b7; overflow-x: auto; max-height: 220px; }
-    
-    .rule-input { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-    input, select { background: rgba(2, 6, 23, 0.8); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 0.75rem; border-radius: 0.375rem; font-family: inherit; font-size: 0.85rem; }
+    pre { background: rgba(2, 6, 23, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.75rem; border-radius: 0.5rem; font-family: 'Fira Code', monospace; font-size: 0.8rem; color: #6ee7b7; overflow-x: auto; max-height: 200px; }
   </style>
 </head>
 <body>
   <header>
     <div>
-      <div class="brand">🐧 eBPF Kernel Network & Zero-Copy Mesh ⚡</div>
-      <div style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0.2rem;">Linux XDP Data Path • JIT Filter Engine • Zero-Copy Ring Buffer • by anderdebona</div>
+      <div class="brand">🐧 eBPF Kernel Network & Zero-Copy Mesh v5.0.0 ⚡</div>
+      <div style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0.2rem;">XDP Flow Steerer • SYN-Flood Guard • Zero-Copy Ring Buffer • JIT Filter Engine • by anderdebona</div>
     </div>
     <span class="status-badge">● XDP_DRV Hook Active</span>
   </header>
 
   <div class="stats-row">
     <div class="stat-card">
-      <div class="stat-lbl">Total Packets</div>
+      <div class="stat-lbl">Total Ingested</div>
       <div class="stat-val" id="statTotal">0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-lbl">XDP Dropped (DDoS)</div>
-      <div class="stat-val" style="color: var(--red);" id="statDropped">0</div>
+      <div class="stat-lbl">XDP Drops</div>
+      <div class="stat-val" style="color: var(--red);" id="statDrops">0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-lbl">Zero-Copy Passed</div>
-      <div class="stat-val" style="color: var(--accent);" id="statPassed">0</div>
+      <div class="stat-lbl">Active TCP Conns</div>
+      <div class="stat-val" style="color: var(--accent);" id="statConns">0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-lbl">Avg Hook Latency</div>
-      <div class="stat-val" id="statLatency">0.18 µs</div>
+      <div class="stat-lbl">SYN Cookies</div>
+      <div class="stat-val" style="color: var(--amber);" id="statCookies">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">CPU Queues</div>
+      <div class="stat-val" style="color: var(--cyan);" id="statQueues">8 Cores</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">Proc Latency</div>
+      <div class="stat-val" style="color: #a78bfa;" id="statLatency">0.12 μs</div>
     </div>
   </div>
 
   <div class="main-grid">
     <div class="panel">
       <div class="panel-title">
-        <span>⚡ Real-Time XDP Packet Waterfall</span>
-        <span style="font-size: 0.75rem; color: var(--text-dim);">Line-Rate Stream</span>
+        <span>🌊 Real-Time XDP Packet Flow & Ring-Buffer Telemetry</span>
+        <span style="font-size: 0.8rem; color: var(--text-dim);">Lockless Per-CPU Queues</span>
       </div>
-      <canvas id="packetCanvas"></canvas>
+      <canvas id="packetCanvas" width="500" height="200"></canvas>
+
       <div class="controls">
-        <button class="btn" onclick="injectTraffic('RANDOM')">🚀 Inject 100 Packets</button>
-        <button class="btn btn-red" onclick="injectTraffic('SYN_FLOOD')">⚠️ Simulate SYN Flood Attack</button>
-        <button class="btn" style="background: rgba(255,255,255,0.1);" onclick="fetchPrometheus()">📊 View OpenMetrics</button>
+        <button class="btn" onclick="injectTraffic('RANDOM', 100)">⚡ Inject 100 Packets</button>
+        <button class="btn btn-red" onclick="injectTraffic('SYN_FLOOD', 200)">🚨 Simulate SYN Flood Attack</button>
+        <a href="/metrics" target="_blank" class="btn" style="background: rgba(255,255,255,0.1); text-decoration: none;">📊 OpenMetrics Endpoint</a>
       </div>
-      <div class="panel-title" style="margin-top: 1rem;"><span>📦 Zero-Copy Ring Buffer Telemetry</span></div>
-      <pre id="ringLog">Awaiting packet stream...</pre>
+
+      <div class="panel-title" style="margin-top: 1rem;">
+        <span>🛡️ XDP L4 Flow Steerer & CPU Queue Telemetry (v5.0.0)</span>
+      </div>
+      <pre id="queueLog">Awaiting telemetry...</pre>
     </div>
 
     <div class="panel">
       <div class="panel-title">
-        <span>🛡️ DynamicBPF Filter Rules (JIT)</span>
+        <span>🍪 Stateless SYN-Flood Guard Status (v5.0.0)</span>
       </div>
-      <p style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.5rem;">
-        Add dynamic bytecode rules executed directly in the driver hook without kernel recompilation.
-      </p>
-      <div class="rule-input">
-        <select id="ruleField">
-          <option value="dstPort">dstPort</option>
-          <option value="srcIp">srcIp (prefix)</option>
-          <option value="protocol">protocol</option>
-        </select>
-        <input type="text" id="ruleValue" placeholder="e.g. 23 or 192.168." style="flex: 1;">
-        <button class="btn" onclick="addRule()">+ Add Rule</button>
-      </div>
-      <pre id="rulesList" style="margin-top: 0.75rem; max-height: 140px;">Loading rules...</pre>
+      <pre id="synLog">Awaiting attack monitor...</pre>
 
-      <div class="panel-title" style="margin-top: 1.25rem;">
-        <span>🔍 Live Kernel Inspection Inspector</span>
+      <div class="panel-title" style="margin-top: 1rem;">
+        <span>🔍 Stateful Connection Tracking</span>
       </div>
-      <pre id="metricsLog">Connecting to /api/ebpf/inject...</pre>
+      <pre id="connLog">Awaiting conntrack entries...</pre>
+
+      <div class="panel-title" style="margin-top: 1rem;">
+        <span>📝 Sample Ingested Packet Headers</span>
+      </div>
+      <pre id="sampleLog">Awaiting packet stream...</pre>
     </div>
   </div>
 
   <script>
     const canvas = document.getElementById('packetCanvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = canvas.offsetWidth;
-    canvas.height = 180;
+    let history = [];
 
-    let particles = [];
-
-    function draw() {
-      ctx.fillStyle = 'rgba(2, 6, 23, 0.3)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        p.x += p.vx;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 8;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
-      particles = particles.filter(p => p.x < canvas.width);
-      requestAnimationFrame(draw);
-    }
-    draw();
-
-    async function injectTraffic(mode) {
+    async function injectTraffic(attackMode, count) {
       const res = await fetch('/api/ebpf/inject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: 60, attackMode: mode })
+        body: JSON.stringify({ attackMode, count })
       });
       const data = await res.json();
-      
-      document.getElementById('statTotal').innerText = data.kernelMetrics.packetCount.toLocaleString();
-      document.getElementById('statDropped').innerText = data.kernelMetrics.droppedPackets.toLocaleString();
-      document.getElementById('statPassed').innerText = (data.kernelMetrics.packetCount - data.kernelMetrics.droppedPackets).toLocaleString();
-      document.getElementById('metricsLog').innerText = JSON.stringify({
-        kernelMetrics: data.kernelMetrics,
-        filterStats: data.filterStats,
-        connectionStats: data.connectionStats
-      }, null, 2);
-      document.getElementById('ringLog').innerText = JSON.stringify(data.consumedRingBuffer.slice(0, 5), null, 2);
 
-      // Spawn particles
-      data.sampleInjected.forEach((pkt, idx) => {
-        setTimeout(() => {
-          particles.push({
-            x: 10,
-            y: 20 + Math.random() * (canvas.height - 40),
-            vx: 4 + Math.random() * 6,
-            size: pkt.action === 'XDP_DROP' ? 3.5 : 4.5,
-            color: pkt.action === 'XDP_DROP' ? '#f43f5e' : '#10b981'
-          });
-        }, idx * 25);
+      document.getElementById('statTotal').innerText = data.kernelMetrics.packetCount;
+      document.getElementById('statDrops').innerText = data.kernelMetrics.droppedPackets;
+      document.getElementById('statConns').innerText = data.connectionStats.total;
+      document.getElementById('statCookies').innerText = data.synGuardStatus.totalCookiesGenerated;
+
+      document.getElementById('queueLog').innerText = JSON.stringify(data.queueTelemetry, null, 2);
+      document.getElementById('synLog').innerText = JSON.stringify(data.synGuardStatus, null, 2);
+      document.getElementById('connLog').innerText = JSON.stringify(data.connectionStats, null, 2);
+      document.getElementById('sampleLog').innerText = JSON.stringify(data.sampleInjected, null, 2);
+
+      history.push({
+        total: count,
+        drops: data.kernelMetrics.droppedPackets,
+        isAttack: attackMode === 'SYN_FLOOD'
+      });
+      if (history.length > 30) history.shift();
+      drawWaterfall();
+    }
+
+    function drawWaterfall() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const barWidth = canvas.width / 30;
+
+      history.forEach((h, i) => {
+        const x = i * barWidth;
+        const barHeight = Math.min(canvas.height - 20, h.total * 0.8);
+        const y = canvas.height - barHeight;
+
+        ctx.fillStyle = h.isAttack ? '#f43f5e' : '#10b981';
+        ctx.fillRect(x + 2, y, barWidth - 4, barHeight);
       });
     }
 
-    async function loadRules() {
-      const res = await fetch('/api/ebpf/rules');
-      const data = await res.json();
-      document.getElementById('rulesList').innerText = JSON.stringify(data.programs, null, 2);
-    }
-
-    async function addRule() {
-      const field = document.getElementById('ruleField').value;
-      const rawVal = document.getElementById('ruleValue').value.trim();
-      const value = field === 'dstPort' ? parseInt(rawVal, 10) : rawVal;
-      const op = field === 'srcIp' ? 'PREFIX' : 'EQ';
-
-      await fetch('/api/ebpf/rules/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: `rule_${Date.now()}`,
-          name: `Filter on ${field}`,
-          action: 'DROP',
-          field,
-          op,
-          value
-        })
-      });
-      loadRules();
-    }
-
-    async function fetchPrometheus() {
-      const res = await fetch('/metrics');
-      const txt = await res.text();
-      document.getElementById('metricsLog').innerText = txt;
-    }
-
-    window.onload = () => {
-      injectTraffic('RANDOM');
-      loadRules();
-    };
+    window.onload = () => injectTraffic('RANDOM', 50);
   </script>
 </body>
 </html>

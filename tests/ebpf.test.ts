@@ -286,3 +286,60 @@ describe('PrometheusMetricsExporter (v4.0.0)', () => {
   });
 });
 
+describe('XdpL4FlowSteerer (v5.0.0)', () => {
+  it('should compute flow hash and steer packets to dedicated CPU queues', async () => {
+    const { XdpL4FlowSteerer } = await import('../src/ebpf/xdp-l4-flow-steerer.js');
+    const steerer = new XdpL4FlowSteerer(8);
+    const pkt = {
+      id: 'p1',
+      srcIp: '192.168.1.10',
+      dstIp: '10.0.0.1',
+      srcPort: 54321,
+      dstPort: 80,
+      protocol: 'TCP' as const,
+      length: 1500
+    };
+
+    const res = steerer.processPacket(pkt);
+    expect(res.targetQueue).toBeGreaterThanOrEqual(0);
+    expect(res.targetQueue).toBeLessThan(8);
+    expect(res.action).toBe('XDP_REDIRECT');
+
+    const telemetry = steerer.getTelemetry();
+    expect(telemetry.length).toBe(8);
+    expect(telemetry[res.targetQueue].packetCount).toBe(1);
+    expect(telemetry[res.targetQueue].byteCount).toBe(1500);
+  });
+});
+
+describe('SynFloodGuard (v5.0.0)', () => {
+  it('should generate valid stateless SYN cookies and verify legitimate ACKs', async () => {
+    const { SynFloodGuard } = await import('../src/ebpf/syn-flood-guard.js');
+    const guard = new SynFloodGuard(100);
+
+    const syn = {
+      srcIp: '203.0.113.5',
+      dstIp: '198.51.100.1',
+      srcPort: 45000,
+      dstPort: 443,
+      initialSeq: 123456,
+      timestamp: Date.now()
+    };
+
+    const cookie = guard.generateSynCookie(syn, 3);
+    expect(cookie).toBeGreaterThan(0);
+
+    // Client ACKs with (cookie + 1)
+    const verification = guard.verifyAckCookie(syn.srcIp, syn.dstIp, syn.srcPort, syn.dstPort, cookie + 1);
+    expect(verification.isValidCookie).toBe(true);
+    expect(verification.action).toBe('ESTABLISH_SOCKET');
+    expect(verification.mssIndex).toBe(3);
+
+    // Forged ACK verification should fail
+    const forged = guard.verifyAckCookie(syn.srcIp, syn.dstIp, syn.srcPort, syn.dstPort, 999999999);
+    expect(forged.isValidCookie).toBe(false);
+    expect(forged.action).toBe('DROP_FORGED_ACK');
+  });
+});
+
+

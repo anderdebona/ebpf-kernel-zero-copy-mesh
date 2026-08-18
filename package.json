@@ -1,7 +1,7 @@
 {
   "name": "ebpf-kernel-zero-copy-mesh",
-  "version": "4.0.0",
-  "description": "PhD-Grade eBPF Kernel Network & Zero-Copy Telemetry Engine for Linux XDP Data Paths",
+  "version": "5.0.0",
+  "description": "PhD-Grade Linux Kernel eBPF Zero-Copy Network Mesh (XDP L4 Flow Steerer, Stateless SYN-Flood Guard, JIT Filter Engine & Prometheus Exporter)",
   "main": "dist/server.js",
   "type": "module",
   "bin": {
